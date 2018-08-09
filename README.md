@@ -1,4 +1,4 @@
 notebook
 ---
 
-Jupyter notebooks for random experiments with data analysis and machine learning.
+Jupyter notebooks for random experiments with audio processing, data analysis and machine learning.
