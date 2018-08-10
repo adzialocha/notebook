@@ -5,6 +5,7 @@ librosa==0.6.1
 matplotlib==2.2.2
 music21==5.1.0
 numpy==1.14.5
+pretty-midi==0.2.8
 scikit-learn==0.19.1
 scipy==1.1.0
-tensorflow=1.8.0
+tensorflow==1.8.0
