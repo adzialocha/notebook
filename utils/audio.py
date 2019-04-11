@@ -74,25 +74,30 @@ def mfcc_features(y, sr, n_mels=128, n_mfcc=13):
 
 def slice_audio(y, onsets, sr=44100, offset=0, top_db=20):
     frames = []
+    min_frames = (sr // 1000) * MIN_SAMPLE_MS
+    
     for i in range(len(onsets) - 1):
         # Take audio from onset start to next onset
         onset_start = onsets[i] * HOP_LENGTH
         onset_end = onsets[i + 1] * HOP_LENGTH
         
-        if onset_end - onset_start < (sr // 1000) * MIN_SAMPLE_MS:
+        # Ignore too short samples
+        if onset_end - onset_start < min_frames:
             continue
         
         # Trim silence
-        y_trim, trim_indexes = librosa.effects.trim(y[onset_start:onset_end], top_db=top_db)
+        y_trim, trim_indexes = librosa.effects.trim(y[onset_start:onset_end],
+                                                    ref=np.mean,
+                                                    top_db=top_db)
 
-        if len(y_trim) < MIN_SAMPLE_MS:
+        if len(y_trim) < min_frames:
             continue
         
+        # Set new slice relative to onset position
         start = onset_start + trim_indexes[0]
         end = onset_start + trim_indexes[1]
 
-        # Ignore too short samples
-        if end - start < (sr // 1000) * MIN_SAMPLE_MS:
+        if end - start < min_frames:
             continue
         
         frames.append([y[start:end], start + offset, end + offset])
@@ -100,7 +105,7 @@ def slice_audio(y, onsets, sr=44100, offset=0, top_db=20):
     return frames
 
 
-def detect_onsets(y, sr=44100, db_threshold=-50):
+def detect_onsets(y, sr=441000):
     # Get the frame->beat strength profile
     onset_envelope = librosa.onset.onset_strength(y=y,
                                                   sr=sr,
@@ -114,13 +119,4 @@ def detect_onsets(y, sr=44100, db_threshold=-50):
                                         hop_length=HOP_LENGTH,
                                         backtrack=True)
 
-    # Convert frames to time
-    times = librosa.frames_to_time(np.arange(len(onset_envelope)),
-                                   sr=sr,
-                                   hop_length=HOP_LENGTH)
-
-    # Filter out onsets which signals are too low
-    db = get_db(y)
-    onsets = [o for o in onsets if db[o] > db_threshold]
-
-    return onsets, times[onsets]
+    return onsets
